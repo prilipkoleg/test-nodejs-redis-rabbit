@@ -1,5 +1,5 @@
-const config = require('app/config/config');
-const event = require('app/config/constants').events;
+const config = require('config/config');
+const event = require('config/constants').events;
 
 class Generator{
 
@@ -14,8 +14,11 @@ class Generator{
         const self = this;
 
         this.EE.on(
-            event.GENERATOR_START,
-            () => self.startGenerate()
+            event.APP_START,
+            () => {
+                self.startGenerate();
+                self.EE.emit(event.GENERATOR_START);
+            }
         );
         this.EE.on(
             event.GENERATOR_STOP,
@@ -29,23 +32,16 @@ class Generator{
             this.generatorLoop.bind(this),
             config.taskGenerator.generateInterval
         );
-        console.log(event.GENERATOR_START);
     }
 
     stopGenerate()
     {
-        //:todo -> why clearInterval not working?
         clearInterval(this.intervalObj);
-        this.intervalObj = null;
-        console.log(event.GENERATOR_STOP);
     }
 
     generatorLoop()
     {
-        // let count = this.randomIntInc(config.taskGenerator.min, config.taskGenerator.max);
-        const min = config.taskGenerator.min;
-        const max = config.taskGenerator.max;
-        let count = Math.floor(Math.random() * (max - min + 1) + min);
+        let count = this.randomIntInc(config.taskGenerator.min, config.taskGenerator.max);
         /**
          * taskBody is a string with dots like -> "...",
          * where count of dots depends from random int from min to max
@@ -56,7 +52,7 @@ class Generator{
         this.EE.emit(event.GENERATOR_GENERATED_NEW_TASK, `task_${this.taskCount++}`, taskBody);
     }
 
-    static randomIntInc (low, high)
+    randomIntInc (low, high)
     {
         return Math.floor(Math.random() * (high - low + 1) + low);
     }

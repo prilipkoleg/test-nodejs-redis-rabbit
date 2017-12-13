@@ -1,5 +1,6 @@
-const config = require('app/config/config').rabbitMq;
-const event = require('app/config/constants').events;
+const config = require('config/config').rabbitMq;
+const event = require('config/constants').events;
+const say = require('helpers/say');
 
 class RabbitMq {
 
@@ -9,42 +10,45 @@ class RabbitMq {
     }
 
     init(){
-        const amqp = require('amqplib/callback_api');
         const self = this;
+        const amqp = require('amqplib/callback_api');
 
-        amqp.connect(config.host, (err, conn) => {
-            if(err)
-            { self.EE.emit('error', 'Rabbit error:', err); }
-
-            this.connection = conn;
-            self.EE.emit(event.RABBIT_CONNECTED);
-
-            conn.createChannel( (err, ch) =>
+        amqp.connect(
+            config.host,
+            (err, conn) =>
             {
-                if (err){
-                    self.EE.emit('error', 'Rabbit Chanel error', err);
-                }
+                if(err)
+                { self.EE.emit('error', 'Rabbit error:', err) }
 
-                self.channel = ch;
-                self.EE.emit(event.RABBIT_CHANNEL_CREATED);
+                self.connection = conn;
+                self.EE.emit(event.RABBIT_CONNECTED);
 
-                const q = config.queueName;
-                ch.assertQueue( q, config.queueConfig );
-                //-- set consumer (simple worker)
-                //todo:set noAck false after Confirming
-                ch.consume( q, self.worker.bind(self), {noAck: true} );
-            });
-        });
+                conn.createChannel( (err, ch) =>
+                {
+                    if (err){
+                        self.EE.emit('error', 'Rabbit Chanel error', err);
+                    }
+                    self.channel = ch;
+                    self.EE.emit(event.RABBIT_CHANNEL_CREATED);
+                    const q = config.queue.name;
+                    ch.assertQueue( q, config.queue.config );
+                    ch.consume( q, self.worker.bind(self), {noAck: false} ); // set consumer (simple worker)
+                });
+            }
+        );
+
+        this.EE.on(
+            event.APP_STOP,
+            () => self.disconnect()
+        );
     }
 
     sendToQueue(data)
     {
-        this.channel.sendToQueue(config.queueName, new Buffer(JSON.stringify(data)));
-        // Note: on Node 6 Buffer.from(msg) should be used
+        this.channel.sendToQueue(config.queue.name, new Buffer(JSON.stringify(data)));
         this.EE.emit(event.RABBIT_PUSHED_TO_QUEUE, data);
     }
 
-    //todo: Needs to Confirm messages
     worker(buffer)
     {
         const self = this;
@@ -53,14 +57,16 @@ class RabbitMq {
         setTimeout(
             () => {
                 self.EE.emit(event.RABBIT_WORKER_FINISHED_TASK, taskId);
+                self.channel.ack(buffer); // remove task from queue
             },
             taskBody.length * 1000
         );
     }
 
-    destroy(){
+    disconnect(){
         this.connection.close();
-        console.log(`Rabbit connection closed!`);
+        this.connection = null;
+        this.EE.emit(event.RABBIT_DISCONNECTED);
     }
 }
 

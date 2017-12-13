@@ -4,7 +4,7 @@
   "description": "test together",
   "main": "app/app.js",
   "scripts": {
-    "start": "NODE_PATH=. nodejs app/app.js",
+    "start": "NODE_PATH=./app nodejs app/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "prilipkoleg@gmail.com",
@@ -12,6 +12,7 @@
   "dependencies": {
     "amqplib": "^0.5.2",
     "express": "^4.16.2",
+    "lodash": "^4.17.4",
     "redis": "^2.8.0"
   }
 }

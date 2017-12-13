@@ -1,95 +1,87 @@
-const eventEmitter = new require('events');
-const Constants = require('app/config/constants');
-const config = require('app/config/config');
-const RedisClient = require('app/modules/redis/index');
-const RabbitMq = require('app/modules/rabbitMq/index');
-const taskGenerator = require('app/modules/taskGenerator');
+const eventEmitter = require('events');
 const express = require('express');
-const app = express();
+const constants = require('config/constants');
+const config = require('config/config');
+const redisClient = require('modules/redis/index');
+const rabbitMq = require('modules/rabbitMq/index');
+const taskGenerator = require('modules/taskGenerator');
+const say = require('helpers/say');
 
+const App = express();
 const EE = new eventEmitter();
-const Rabbit = new RabbitMq(EE);
-const Redis = new RedisClient(EE);
-const generator = new taskGenerator(EE);
-const event = Constants.events;
+const Rabbit = new rabbitMq(EE);
+const Redis = new redisClient(EE);
+const Generator = new taskGenerator(EE);
+const event = constants.events;
 
-EE.on( event.REDIS_CONNECTED,
-    () => {
-        console.log("Redis connected!");
-        EE.emit(event.GENERATOR_START);
-    }
-);
-
+// start app ----------------------
 EE.on( event.RABBIT_CONNECTED,
     () => {
-        console.log("Rabbit connected!");
-        EE.emit(event.GENERATOR_START);
+        EE.emit(event.APP_START);
+        say("[*] Rabbit connected!");
     }
 );
+EE.on( event.REDIS_CONNECTED, () => say("[*] Redis connected!"));
+EE.on( event.GENERATOR_START, () => say('[*] Generator started!'));
 
-EE.on(
-    event.GENERATOR_GENERATED_NEW_TASK,
+EE.on( event.GENERATOR_GENERATED_NEW_TASK,
     (taskId, taskBody) => {
-        // push task to Redis
-        Redis.getClient().hmset(
+        Redis.getClient().hmset( // push task to Redis
             taskId,
             'body', taskBody,
-            'status', Constants.constants.taskStatuses.CREATED
+            'status', constants.constants.taskStatuses.CREATED
         );
-        // and push in Rabbit
-        Rabbit.sendToQueue( {taskId: taskId, taskBody: taskBody} );
-        console.log(taskId, taskBody);
+        Rabbit.sendToQueue( {taskId: taskId, taskBody: taskBody} ); // and push task to Rabbit
+        Redis.showTaskInfo(taskId, `[*] New task created: "${taskId}".`);
     }
 );
-
-EE.on(
-    event.RABBIT_WORKER_FINISHED_TASK,
+EE.on( event.RABBIT_PUSHED_TO_QUEUE,
+    (data) => say(`Task: "${data.taskId}" pushed to queue.`, true)
+);
+EE.on( event.RABBIT_WORKER_RECEIVE_TASK,
     (taskId) => {
-        const client = Redis.getClient();
-
-        client.exists(
+        Redis.updateTaskStatus(
             taskId,
-            (err, reply) =>
-            {
-                (reply === 1)
-                    ? updateHash()
-                    : console.log(`Redis key '${taskId}' doesn\'t exist!`);
-            }
+            constants.constants.taskStatuses.IN_PROGRESS,
+            `[*] Worker receive task: "${taskId}".`
         );
-        
-        function updateHash() {
-            client.hgetall(
-                taskId,
-                (err, object) =>
-                {
-                    if (err) {}
-                    client.hmset(
-                        taskId,
-                        'body', object.body,
-                        'status', Constants.constants.taskStatuses.FINISHED
-                    );
-                    client.expire(taskId, 10);
-                    client.hgetall(taskId, (err, val)=> console.log(taskId, val));
-                }
-            );
-        }
+    }
+);
+EE.on( event.RABBIT_WORKER_FINISHED_TASK,
+    (taskId) => {
+        Redis.updateTaskStatus(
+            taskId,
+            constants.constants.taskStatuses.FINISHED,
+            `[x] Worker finished task: "${taskId}".`
+        );
     }
 );
 
-setTimeout(()=>{
-    EE.emit(event.GENERATOR_STOP);
-    generator.stopGenerate();
-}, 10000);
+EE.on( event.RABBIT_DISCONNECTED, () => say("[x] Rabbit disconnected!"));
+EE.on( event.REDIS_DISCONNECTED,  () => say("[x] Redis disconnected!"));
+EE.on( event.GENERATOR_STOP,      () => say('[x] Generator stopped!'));
 
-
-EE.on(
-    'error',
+EE.on('error',
     (errorName, err) => {
         // do something.....
-        console.log(errorName, err);
+        say([errorName, err], true, true);
     }
 );
 
-app.listen(config.app.port, function () {
-    console.log('App listening on port 3000!');
-});
+// stop app ----------------------
+setTimeout(()=>{
+    EE.emit(event.GENERATOR_STOP);
+    setTimeout(
+        ()=> {
+            EE.emit(event.APP_STOP);
+            process.exit(0);
+        },
+        3000
+    );
+}, config.app.generatorWorkingTime);
+
+// app server  ----------------------
+App.listen(
+    config.app.port,
+    () => say('App listening on port 3000!')
+);

@@ -11,9 +11,14 @@ const rabbit = 'rabbitMq';
 const generator = 'generator';
 
 const events = {
+    APP_START: `APP_START`,
+    APP_STOP: `APP_STOP`,
+    //--------------
     REDIS_CONNECTED: `redis.connected`,
+    REDIS_DISCONNECTED: `redis.disconnected`,
     //--------------
     RABBIT_CONNECTED: `${rabbit}.connected`,
+    RABBIT_DISCONNECTED: `${rabbit}.disconnected`,
     RABBIT_CHANNEL_CREATED: `${rabbit}.channel_created`,
     RABBIT_PUSHED_TO_QUEUE: `${rabbit}.pushedToQueue`,
     RABBIT_WORKER_RECEIVE_TASK: `${rabbit}.worker.received_task`,
