@@ -27,7 +27,6 @@ const events = {
     GENERATOR_START: `${generator}.start`,
     GENERATOR_STOP: `${generator}.stop`,
     GENERATOR_GENERATED_NEW_TASK: `${generator}.new_task_generated`,
-
 };
 
 module.exports = {

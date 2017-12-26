@@ -8,7 +8,7 @@ class Redis {
 
     constructor(eventEmitter)
     {
-        this.EE = eventEmitter;
+        this.Mediator = eventEmitter;
         this.connect();
     }
 
@@ -19,14 +19,14 @@ class Redis {
 
         this.client.on(
             'connect',
-            () => self.EE.emit(event.REDIS_CONNECTED)
+            () => self.Mediator.emit(event.REDIS_CONNECTED)
 
         );
-        this.EE.on(
+        this.Mediator.on(
             event.APP_STOP,
             () => {
                 self.disconnect();
-                self.EE.emit(event.REDIS_DISCONNECTED);
+                self.Mediator.emit(event.REDIS_DISCONNECTED);
             }
         );
     }

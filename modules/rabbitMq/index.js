@@ -5,7 +5,7 @@ const say = require('helpers/say');
 class RabbitMq {
 
     constructor(eventEmitter){
-        this.EE = eventEmitter;
+        this.Mediator = eventEmitter;
         this.init();
     }
 
@@ -18,18 +18,18 @@ class RabbitMq {
             (err, conn) =>
             {
                 if(err)
-                { self.EE.emit('error', 'Rabbit error:', err) }
+                { self.Mediator.emit('error', 'Rabbit error:', err) }
 
                 self.connection = conn;
-                self.EE.emit(event.RABBIT_CONNECTED);
+                self.Mediator.emit(event.RABBIT_CONNECTED);
 
                 conn.createChannel( (err, ch) =>
                 {
                     if (err){
-                        self.EE.emit('error', 'Rabbit Chanel error', err);
+                        self.Mediator.emit('error', 'Rabbit Chanel error', err);
                     }
                     self.channel = ch;
-                    self.EE.emit(event.RABBIT_CHANNEL_CREATED);
+                    self.Mediator.emit(event.RABBIT_CHANNEL_CREATED);
                     const q = config.queue.name;
                     ch.assertQueue( q, config.queue.config );
                     ch.consume( q, self.worker.bind(self), {noAck: false} ); // set consumer (simple worker)
@@ -37,7 +37,7 @@ class RabbitMq {
             }
         );
 
-        this.EE.on(
+        this.Mediator.on(
             event.APP_STOP,
             () => self.disconnect()
         );
@@ -46,17 +46,17 @@ class RabbitMq {
     sendToQueue(data)
     {
         this.channel.sendToQueue(config.queue.name, new Buffer(JSON.stringify(data)));
-        this.EE.emit(event.RABBIT_PUSHED_TO_QUEUE, data);
+        this.Mediator.emit(event.RABBIT_PUSHED_TO_QUEUE, data);
     }
 
     worker(buffer)
     {
         const self = this;
         const {taskId, taskBody} = JSON.parse(buffer.content.toString());
-        this.EE.emit(event.RABBIT_WORKER_RECEIVE_TASK, taskId);
+        this.Mediator.emit(event.RABBIT_WORKER_RECEIVE_TASK, taskId);
         setTimeout(
             () => {
-                self.EE.emit(event.RABBIT_WORKER_FINISHED_TASK, taskId);
+                self.Mediator.emit(event.RABBIT_WORKER_FINISHED_TASK, taskId);
                 self.channel.ack(buffer); // remove task from queue
             },
             taskBody.length * 1000
@@ -66,7 +66,7 @@ class RabbitMq {
     disconnect(){
         this.connection.close();
         this.connection = null;
-        this.EE.emit(event.RABBIT_DISCONNECTED);
+        this.Mediator.emit(event.RABBIT_DISCONNECTED);
     }
 }
 

@@ -4,7 +4,7 @@ const event = require('config/constants').events;
 class Generator{
 
     constructor(eventEmitter){
-        this.EE = eventEmitter;
+        this.Mediator = eventEmitter;
         this.taskCount = 1;
 
         this.setEventListeners();
@@ -13,14 +13,14 @@ class Generator{
     setEventListeners(){
         const self = this;
 
-        this.EE.on(
+        this.Mediator.on(
             event.APP_START,
             () => {
                 self.startGenerate();
-                self.EE.emit(event.GENERATOR_START);
+                self.Mediator.emit(event.GENERATOR_START);
             }
         );
-        this.EE.on(
+        this.Mediator.on(
             event.GENERATOR_STOP,
             () => self.stopGenerate()
         )
@@ -49,7 +49,7 @@ class Generator{
          */
         let taskBody = '';
         while (count) { taskBody += '.'; count-- }
-        this.EE.emit(event.GENERATOR_GENERATED_NEW_TASK, `task_${this.taskCount++}`, taskBody);
+        this.Mediator.emit(event.GENERATOR_GENERATED_NEW_TASK, `task_${this.taskCount++}`, taskBody);
     }
 
     randomIntInc (low, high)
