@@ -1,0 +1,53 @@
+version: "3"
+services:
+  app:
+#    image: node:9.4-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+#    ports:
+#     - "3000:3001"
+    working_dir: /app
+    volumes:
+      - .:/app
+#    depends_on:
+#      - redis
+#      - rabbitmq
+#    links:
+#      - redis
+#      - rabbitmq
+    labels:
+      NAME: "App"
+    entrypoint: npm start
+    networks:
+      - testing-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+#    configs:
+#      my_config:
+#        file: ./my_config.txt
+#      my_other_config:
+#        external: true
+    labels:
+      NAME: "Redis"
+    networks:
+      - testing-network
+
+  rabbitmq:
+    image: rabbitmq:3.7.2-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "123456"
+    labels:
+      NAME: "RabbitMQ"
+    networks:
+      - testing-network
+
+networks:
+  testing-network:

@@ -2,6 +2,8 @@ const config = require('config/config').rabbitMq;
 const event = require('config/constants').events;
 const say = require('helpers/say');
 
+const connectionLink = `${config.protocol}://${config.user}:${config.pass}@${config.host}`;
+
 class RabbitMq {
 
     constructor(eventEmitter){
@@ -14,7 +16,7 @@ class RabbitMq {
         const amqp = require('amqplib/callback_api');
 
         amqp.connect(
-            config.host,
+            connectionLink,
             (err, conn) =>
             {
                 if(err)

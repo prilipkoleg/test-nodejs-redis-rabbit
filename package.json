@@ -1,11 +1,11 @@
 {
-  "name": "nodejs-rebbit-redis",
+  "name": "test-nodejs-rebbit-redis",
   "version": "1.0.0",
   "description": "test together",
   "main": "app/app.js",
   "scripts": {
-    "start": "NODE_PATH=. nodejs app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "NODE_PATH=. node app.js",
+    "nodemon": "nodemon --exec npm start"
   },
   "author": "prilipkoleg@gmail.com",
   "license": "MIT",
@@ -14,5 +14,10 @@
     "express": "^4.16.2",
     "lodash": "^4.17.4",
     "redis": "^2.8.0"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      ".idea"
+    ]
   }
 }

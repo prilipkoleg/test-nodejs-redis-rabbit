@@ -81,7 +81,7 @@ setTimeout(()=>{
 }, config.app.generatorWorkingTime);
 
 // app server  ----------------------
-App.listen(
-    config.app.port,
-    () => say('[*] App listening on port 3000!')
-);
+// App.listen(
+//     config.app.port,
+//     () => say('[*] App listening on port 3000!')
+// );
