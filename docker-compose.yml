@@ -1,6 +1,7 @@
 version: "3"
 services:
   app:
+    container_name: App
 #    image: node:9.4-alpine
     build:
       context: .
@@ -10,19 +11,19 @@ services:
     working_dir: /app
     volumes:
       - .:/app
+      - /app/node_modules
 #    depends_on:
 #      - redis
 #      - rabbitmq
 #    links:
 #      - redis
 #      - rabbitmq
-    labels:
-      NAME: "App"
     entrypoint: npm start
     networks:
       - testing-network
 
   redis:
+    container_name: Redis
     image: redis:latest
     ports:
       - "6379:6379"
@@ -31,12 +32,11 @@ services:
 #        file: ./my_config.txt
 #      my_other_config:
 #        external: true
-    labels:
-      NAME: "Redis"
     networks:
       - testing-network
 
   rabbitmq:
+    container_name: RabbitMQ
     image: rabbitmq:3.7.2-management-alpine
     ports:
       - "5672:5672"
@@ -44,8 +44,6 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "rabbitmq"
       RABBITMQ_DEFAULT_PASS: "123456"
-    labels:
-      NAME: "RabbitMQ"
     networks:
       - testing-network
 

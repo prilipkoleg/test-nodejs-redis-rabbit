@@ -2,9 +2,8 @@ FROM node:9.4-alpine
 
 WORKDIR /app
 
-COPY package.json /app
+COPY . /app
 
-#RUN npm install --global nodemon
 RUN npm install --quiet
 
 EXPOSE 3000

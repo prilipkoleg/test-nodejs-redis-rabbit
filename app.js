@@ -69,10 +69,10 @@ Mediator.on('error',
 );
 
 // stop app ----------------------
-setTimeout(()=>{
+setTimeout(() => {
     Mediator.emit(event.GENERATOR_STOP);
     setTimeout(
-        ()=> {
+        () => {
             Mediator.emit(event.APP_STOP);
             process.exit(0);
         },

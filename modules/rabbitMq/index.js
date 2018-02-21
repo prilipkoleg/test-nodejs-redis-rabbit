@@ -65,7 +65,8 @@ class RabbitMq {
         );
     }
 
-    disconnect(){
+    disconnect()
+    {
         this.connection.close();
         this.connection = null;
         this.Mediator.emit(event.RABBIT_DISCONNECTED);
